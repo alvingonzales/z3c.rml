@@ -348,6 +348,11 @@ class IImage(interfaces.IRMLDirectiveSignature):
         required=False,
         acceptAuto=True)
 
+    anchor = attr.Text(
+        title=u'Anchor',
+        description=u'Determines which part of the image corresponds to the given x and y',
+        required=False)
+
 class Image(CanvasRMLDirective):
     signature = IImage
     callable = 'drawImage'
@@ -357,6 +362,7 @@ class Image(CanvasRMLDirective):
         kwargs = dict(self.getAttributeValues(attrMapping=self.attrMapping))
         preserve = kwargs.pop('preserveAspectRatio')
         show = kwargs.pop('showBoundary')
+        anchor = kwargs.get('anchor')
 
         if preserve:
             imgX, imgY = kwargs['image'].getSize()
@@ -372,13 +378,50 @@ class Image(CanvasRMLDirective):
                 else:
                     kwargs['height'] = imgY * kwargs['width'] / imgX
 
+        x = kwargs.get('x')
+        y = kwargs.get('y')
+        width = kwargs.get('width', kwargs['image'].getSize()[0])
+        height = kwargs.get('height', kwargs['image'].getSize()[1])
+
+        if anchor == 'sw':
+            pass
+
+        if anchor == 'w':
+            y = y - (height / 2)
+
+        if anchor == 'nw':
+            y = y - height
+
+        if anchor == 'n':
+            y = y - height
+            x = x - (width / 2)
+
+        if anchor == 'ne':
+            y = y - height
+            x = x - width
+
+        if anchor == 'e':
+            y = y - (height / 2)
+            x = x - width
+
+        if anchor == 'se':
+            x = x - width
+
+        if anchor == 's':
+            x = x - (width / 2)
+
+        if anchor == 'c':
+            y = y - (height / 2)
+            x = x - (width / 2)
+
+        kwargs['x'] = x
+        kwargs['y'] = y
+
         canvas = attr.getManager(self, interfaces.ICanvasManager).canvas
         getattr(canvas, self.callable)(**kwargs)
 
         if show:
-            width = kwargs.get('width', kwargs['image'].getSize()[0])
-            height = kwargs.get('height', kwargs['image'].getSize()[1])
-            canvas.rect(kwargs['x'], kwargs['y'], width, height)
+            canvas.rect(x, y, width, height)
 
 
 class IPlace(interfaces.IRMLDirectiveSignature):
